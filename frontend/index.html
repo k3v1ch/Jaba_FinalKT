@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Event Platform</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Prebuilt, purged Tailwind CSS (generated at Docker build time from the
+         classes actually used). Replaces the cdn.tailwindcss.com Play CDN, whose
+         in-browser JIT compiler watched every DOM mutation and re-compiled CSS on
+         each render — pegging the CPU as the SPA re-rendered on every click. -->
+    <link rel="stylesheet" href="/tailwind.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

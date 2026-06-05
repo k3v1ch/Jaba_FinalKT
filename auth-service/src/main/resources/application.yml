@@ -7,6 +7,9 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5      # default is 10; this app's load needs far fewer
+      minimum-idle: 1           # don't keep idle connections occupying RAM
   jpa:
     hibernate:
       ddl-auto: update

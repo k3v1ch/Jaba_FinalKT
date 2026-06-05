@@ -3,6 +3,9 @@ services:
   auth-db:
     image: postgres:16-alpine
     container_name: auth-db
+    mem_limit: 256m
+    cpus: 0.5
+    restart: unless-stopped
     environment:
       POSTGRES_DB: authdb
       POSTGRES_USER: ${DB_USER:-postgres}
@@ -20,6 +23,9 @@ services:
   event-db:
     image: postgres:16-alpine
     container_name: event-db
+    mem_limit: 256m
+    cpus: 0.5
+    restart: unless-stopped
     environment:
       POSTGRES_DB: eventdb
       POSTGRES_USER: ${DB_USER:-postgres}
@@ -38,6 +44,9 @@ services:
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     container_name: rabbitmq
+    mem_limit: 384m
+    cpus: 0.75
+    restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
@@ -54,6 +63,9 @@ services:
   auth-service:
     build: ./auth-service
     container_name: auth-service
+    mem_limit: 384m
+    cpus: 1.0
+    restart: unless-stopped
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://auth-db:5432/authdb
       SPRING_DATASOURCE_USERNAME: ${DB_USER:-postgres}
@@ -84,6 +96,9 @@ services:
   event-service:
     build: ./event-service
     container_name: event-service
+    mem_limit: 320m
+    cpus: 1.0
+    restart: unless-stopped
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://event-db:5432/eventdb
       SPRING_DATASOURCE_USERNAME: ${DB_USER:-postgres}
@@ -105,6 +120,9 @@ services:
   notification-service:
     build: ./notification-service
     container_name: notification-service
+    mem_limit: 256m
+    cpus: 0.5
+    restart: unless-stopped
     environment:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
@@ -124,6 +142,9 @@ services:
   api-gateway:
     build: ./api-gateway
     container_name: api-gateway
+    mem_limit: 256m
+    cpus: 0.75
+    restart: unless-stopped
     environment:
       AUTH_SERVICE_URL: http://auth-service:8080
       EVENT_SERVICE_URL: http://event-service:8081
@@ -136,6 +157,9 @@ services:
   frontend:
     build: ./frontend
     container_name: frontend
+    mem_limit: 64m
+    cpus: 0.25
+    restart: unless-stopped
     expose:
       - "80"
     networks:

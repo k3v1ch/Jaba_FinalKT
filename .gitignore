@@ -28,3 +28,7 @@ uploads/
 
 # e2e tests build output
 e2e-tests/target/
+
+# Frontend build artifacts (Tailwind CSS is generated at Docker build time)
+frontend/tailwind.css
+frontend/node_modules/
