@@ -229,6 +229,39 @@ function pageRegister() {
     };
 }
 
+// ─── Admin Banner (shown on events page for admins/mods) ─────────────────────
+function adminBanner() {
+    if (!isMod()) return '';
+    const role = getRole();
+    const links = [
+        { href: '#/admin/events',       icon: 'fa-calendar-plus',  label: 'Мероприятия'  },
+        { href: '#/admin/applications', icon: 'fa-clipboard-list', label: 'Заявки'        },
+        ...(isAdmin() ? [{ href: '#/admin/users', icon: 'fa-users-gear', label: 'Пользователи' }] : []),
+    ];
+    return `
+        <div class="mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-5 text-white shadow-lg">
+            <div class="flex items-center justify-between flex-wrap gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                        <i class="fa fa-shield-halved text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="font-bold text-base">Панель управления</p>
+                        <p class="text-indigo-200 text-xs">Вы вошли как <span class="font-semibold text-white">${role}</span></p>
+                    </div>
+                </div>
+                <div class="flex gap-2 flex-wrap">
+                    ${links.map(l => `
+                        <a href="${l.href}" class="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 transition px-3 py-1.5 rounded-lg text-sm font-medium">
+                            <i class="fa ${l.icon} text-xs"></i> ${l.label}
+                        </a>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 // ─── Page: Events ─────────────────────────────────────────────────────────────
 const TYPE_META = {
     CONFERENCE:   { label: 'Конференция',  icon: 'fa-microphone', color: 'indigo' },
@@ -271,6 +304,7 @@ async function pageEvents() {
 
         render(`
             <div class="fade-in">
+                ${adminBanner()}
                 <div class="flex items-center justify-between mb-8">
                     <h1 class="text-3xl font-bold text-gray-800">Мероприятия</h1>
                     ${isMod() ? `<a href="#/admin/events" class="btn-primary px-4 py-2 flex items-center gap-2 text-sm"><i class="fa fa-plus"></i> Создать</a>` : ''}

@@ -36,6 +36,10 @@ app:
   frontend-url: ${FRONTEND_URL:http://localhost:8000}
   admin:
     security-code: ${APP_ADMIN_SECURITY_CODE:admin-secure-2025}
+  seed:
+    admin-email: ${SEED_ADMIN_EMAIL:admin@event.com}
+    admin-password: ${SEED_ADMIN_PASSWORD:Admin1234}
+    admin-name: ${SEED_ADMIN_NAME:Admin}
   uploads:
     profile-images-dir: ${UPLOADS_DIR:./uploads/profile-images}
     max-images-per-user: 5
