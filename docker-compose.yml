@@ -70,10 +70,11 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       APP_ADMIN_SECURITY_CODE: ${ADMIN_SECURITY_CODE:-admin-secure-2025}
       UPLOADS_DIR: /app/uploads/profile-images
+      MAIL_SSL_ENABLE: ${MAIL_SSL_ENABLE:-false}
+      MAIL_STARTTLS_ENABLE: ${MAIL_STARTTLS_ENABLE:-true}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8000}
     volumes:
       - auth-uploads:/app/uploads
-    ports:
-      - "8080:8080"
     depends_on:
       auth-db:
         condition: service_healthy
@@ -114,8 +115,8 @@ services:
       MAIL_USERNAME: ${SMTP_USER:-}
       MAIL_PASSWORD: ${SMTP_PASSWORD:-}
       MAIL_FROM: ${MAIL_FROM:-noreply@eventplatform.com}
-    ports:
-      - "8082:8082"
+      MAIL_SSL_ENABLE: ${MAIL_SSL_ENABLE:-false}
+      MAIL_STARTTLS_ENABLE: ${MAIL_STARTTLS_ENABLE:-true}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -135,8 +136,11 @@ services:
   frontend:
     build: ./frontend
     container_name: frontend
-    ports:
-      - "3000:80"
+    expose:
+      - "80"
+    networks:
+      - default
+      - remnawave-network
     depends_on:
       - api-gateway
 
@@ -144,3 +148,8 @@ volumes:
   auth-db-data:
   event-db-data:
   auth-uploads:
+
+networks:
+  default:
+  remnawave-network:
+    external: true
