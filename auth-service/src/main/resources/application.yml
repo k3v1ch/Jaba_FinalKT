@@ -1,0 +1,41 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/authdb}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:bXktc3VwZXItc2VjcmV0LWtleS1mb3ItZXZlbnQtcGxhdGZvcm0tMjAyNQ==}
+    expiration: 86400000
+  frontend-url: ${FRONTEND_URL:http://localhost:8000}
+  admin:
+    security-code: ${APP_ADMIN_SECURITY_CODE:admin-secure-2025}
+  uploads:
+    profile-images-dir: ${UPLOADS_DIR:./uploads/profile-images}
+    max-images-per-user: 5

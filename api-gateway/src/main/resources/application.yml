@@ -1,0 +1,40 @@
+server:
+  port: 8000
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: ${AUTH_SERVICE_URL:http://localhost:8080}
+          predicates:
+            - Path=/api/auth/**, /api/users/**, /api/admin/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /api/${segment}
+
+        - id: event-service
+          uri: ${EVENT_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/events/**, /api/applications/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /api/${segment}
+
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info

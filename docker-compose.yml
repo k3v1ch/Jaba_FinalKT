@@ -1,0 +1,138 @@
+services:
+  # ─── Databases ──────────────────────────────────────────────
+  auth-db:
+    image: postgres:16-alpine
+    container_name: auth-db
+    environment:
+      POSTGRES_DB: authdb
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  event-db:
+    image: postgres:16-alpine
+    container_name: event-db
+    environment:
+      POSTGRES_DB: eventdb
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - event-db-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Message broker ─────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ─── Microservices ──────────────────────────────────────────
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://auth-db:5432/authdb
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-postgres}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      JWT_SECRET: ${JWT_SECRET:-bXktc3VwZXItc2VjcmV0LWtleS1mb3ItZXZlbnQtcGxhdGZvcm0tMjAyNQ==}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      APP_ADMIN_SECURITY_CODE: ${ADMIN_SECURITY_CODE:-admin-secure-2025}
+      UPLOADS_DIR: /app/uploads/profile-images
+    volumes:
+      - auth-uploads:/app/uploads
+    ports:
+      - "8080:8080"
+    depends_on:
+      auth-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  event-service:
+    build: ./event-service
+    container_name: event-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://event-db:5432/eventdb
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-postgres}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      JWT_SECRET: ${JWT_SECRET:-bXktc3VwZXItc2VjcmV0LWtleS1mb3ItZXZlbnQtcGxhdGZvcm0tMjAyNQ==}
+    ports:
+      - "8081:8081"
+    depends_on:
+      event-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  notification-service:
+    build: ./notification-service
+    container_name: notification-service
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_PASS: ${RABBITMQ_PASSWORD:-guest}
+      MAIL_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${SMTP_PORT:-587}
+      MAIL_USERNAME: ${SMTP_USER:-}
+      MAIL_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-noreply@eventplatform.com}
+    ports:
+      - "8082:8082"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    environment:
+      AUTH_SERVICE_URL: http://auth-service:8080
+      EVENT_SERVICE_URL: http://event-service:8081
+    ports:
+      - "8000:8000"
+    depends_on:
+      - auth-service
+      - event-service
+
+volumes:
+  auth-db-data:
+  event-db-data:
+  auth-uploads:
