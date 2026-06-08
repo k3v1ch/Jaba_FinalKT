@@ -5,19 +5,26 @@
 ## Архитектура
 
 ```
-api-gateway  :8000
-├── auth-service    :8080  (PostgreSQL authdb)
-├── event-service   :8081  (PostgreSQL eventdb)
-└── notification-service :8082
+frontend (nginx, SPA)
+   └── /api → api-gateway :8000
+              ├── auth-service        :8080  (PostgreSQL authdb)
+              ├── event-service       :8081  (PostgreSQL eventdb)
+              └── notification-service :8082
 
 RabbitMQ :5672 (management :15672)
 ```
 
+Все порты сервисов, БД и RabbitMQ **доступны только внутри docker-сети** —
+наружу ничего не публикуется. Единственная внешняя точка входа — frontend
+(nginx), который проксирует `/api` на gateway и обычно стоит за обратным
+прокси (Caddy/Nginx) с TLS.
+
 ### Сервисы
 
-| Сервис | Порт | Роль |
+| Сервис | Порт (внутр.) | Роль |
 |---|---|---|
-| api-gateway | 8000 | Единая точка входа, маршрутизация, CORS |
+| frontend | 80 | SPA (HTML/JS), nginx; проксирует `/api` на gateway |
+| api-gateway | 8000 | Единая точка входа, маршрутизация |
 | auth-service | 8080 | Регистрация, JWT, 2FA (TOTP), профиль, роли |
 | event-service | 8081 | Мероприятия и заявки |
 | notification-service | 8082 | Отправка email через RabbitMQ |
@@ -26,13 +33,22 @@ RabbitMQ :5672 (management :15672)
 
 ```bash
 cp .env.example .env
-# Заполните MAIL_USERNAME и MAIL_PASSWORD в .env
+# Заполните секреты в .env: сильные DB_PASSWORD, RABBITMQ_*, JWT_SECRET,
+# ADMIN_SECURITY_CODE, а также SMTP_* для отправки писем.
 
-# Собрать и запустить
-docker-compose up --build
+# Собрать и запустить (jar-ы собираются внутри Docker, локальный Maven не нужен)
+docker compose up -d --build
 ```
 
-> **Требования:** Docker Desktop, JDK 21 (для локального запуска)
+Откройте сайт через frontend (порт 80 контейнера, обычно за Caddy/Nginx с TLS).
+После изменений в коде достаточно `docker compose up -d --build` —
+multi-stage сборка пересоберёт нужные образы из исходников.
+
+> **Требования:** только Docker + Docker Compose. JDK/Maven для запуска не нужны —
+> сборка идёт внутри образов.
+>
+> ⚠️ **Безопасность:** не публикуйте порты БД/RabbitMQ на хост и не используйте
+> пароли по умолчанию. `.env` не коммитится (в `.gitignore`).
 
 ## API Endpoints
 
@@ -42,7 +58,7 @@ docker-compose up --build
 | Метод | URL | Описание | Доступ |
 |---|---|---|---|
 | POST | `/api/auth/register` | Регистрация | Публичный |
-| GET | `/api/auth/verify?token=...` | Подтверждение email | Публичный |
+| GET | `/api/auth/verify-email?token=...` | Подтверждение email | Публичный |
 | POST | `/api/auth/login` | Вход (JWT) | Публичный |
 | POST | `/api/auth/refresh` | Обновление токена | Публичный |
 | POST | `/api/auth/logout` | Выход | USER+ |
@@ -157,6 +173,19 @@ Authorization: Bearer <admin-token>
 UPDATE users SET role = 'ADMIN' WHERE email = 'your@email.com';
 ```
 
+## Поведение и UX
+
+- **Уведомления о заявках.** При одобрении/отклонении заявитель получает письмо
+  на email и всплывающее уведомление прямо в интерфейсе (фронт опрашивает
+  `/api/applications/my`), а статус виден на странице «Мои заявки».
+- **Чистая авторизация.** Отсутствующий/просроченный/невалидный токен → `401`
+  (фронт автоматически разлогинивает и ведёт на вход); нехватка прав по роли → `403`.
+- **Удаление мероприятия** каскадно удаляет связанные заявки в одной транзакции.
+- **Валидация формы мероприятия** на клиенте — пустую дату нельзя отправить.
+- **Кэширование фронта**: `index.html`/`app.js`/`tailwind.css` отдаются с
+  `Cache-Control: no-cache` (ревалидация по ETag), поэтому обновления
+  подхватываются сразу, без ручного сброса кэша.
+
 ## Технологии
 
 - **Spring Boot 3.4.3**, Java 21
@@ -166,5 +195,6 @@ UPDATE users SET role = 'ADMIN' WHERE email = 'your@email.com';
 - **Spring AMQP** (RabbitMQ) — TopicExchange для нотификаций
 - **@Async** + ThreadPoolTaskExecutor для отправки email
 - **@EnableMethodSecurity** + @PreAuthorize для ролевого доступа
-- **Docker Compose** — единый запуск всех сервисов
+- **Frontend** — SPA на ванильном JS + Tailwind (статическая сборка), nginx
+- **Docker Compose** + multi-stage сборка (jar-ы собираются внутри образов)
 - **Mockito** — unit-тесты сервисного слоя
