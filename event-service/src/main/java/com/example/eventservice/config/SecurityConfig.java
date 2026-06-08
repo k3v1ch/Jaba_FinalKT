@@ -1,6 +1,7 @@
 package com.example.eventservice.config;
 
 import com.example.eventservice.security.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,6 +30,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/**").permitAll()
                 .anyRequest().authenticated()
             )
+            // Missing/invalid token => 401 (not the default 403) so the client can
+            // tell "log in again" apart from "you lack permission" and re-auth cleanly.
+            .exceptionHandling(ex -> ex.authenticationEntryPoint(
+                (request, response, authEx) ->
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")))
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

@@ -76,6 +76,9 @@ public class EventManagementService {
         if (!eventRepository.existsById(id)) {
             throw new AppException(ErrorCode.EVENT_NOT_FOUND);
         }
+        // Applications hold an FK to the event; remove them first so the delete
+        // doesn't fail on the constraint. Same transaction = all-or-nothing.
+        applicationRepository.deleteByEventId(id);
         eventRepository.deleteById(id);
     }
 

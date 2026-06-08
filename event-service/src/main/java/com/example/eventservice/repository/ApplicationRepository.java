@@ -11,4 +11,5 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     boolean existsByEventIdAndUserEmail(Long eventId, String userEmail);
     long countByEventIdAndStatus(Long eventId, Application.ApplicationStatus status);
     Optional<Application> findByIdAndUserEmail(Long id, String userEmail);
+    void deleteByEventId(Long eventId);
 }

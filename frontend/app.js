@@ -4,9 +4,11 @@ const API = '/api';
 // ─── State ────────────────────────────────────────────────────────────────────
 let _token = localStorage.getItem('ep_token');
 const _eventStore = {};
+const SEEN_APPS_KEY = 'ep_seen_apps';   // last-seen status of each of my applications
+let _notifTimer = null;
 
 function getToken()      { return _token; }
-function setToken(t)     { _token = t; t ? localStorage.setItem('ep_token', t) : localStorage.removeItem('ep_token'); }
+function setToken(t)     { _token = t; t ? localStorage.setItem('ep_token', t) : (localStorage.removeItem('ep_token'), localStorage.removeItem(SEEN_APPS_KEY)); }
 function parseJwt(t)     { try { return JSON.parse(atob(t.split('.')[1])); } catch { return {}; } }
 function getRole()       { return _token ? parseJwt(_token).role : null; }
 function getName()       { return _token ? parseJwt(_token).name : null; }
@@ -55,6 +57,14 @@ function route() {
     if (path === '/admin/users' && !isAdmin()) { go('/admin/events'); return; }
     renderNav();
     (routes[path] || pageEvents)();
+
+    // Watch for application status changes (approved/rejected) and notify in-app.
+    if (_token) {
+        checkApplicationUpdates();
+        if (!_notifTimer) _notifTimer = setInterval(checkApplicationUpdates, 45000);
+    } else if (_notifTimer) {
+        clearInterval(_notifTimer); _notifTimer = null;
+    }
 }
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
@@ -625,11 +635,19 @@ function eventFormModal(e = {}) {
 }
 
 function getFormData() {
+    const title = v('ef-title').trim();
+    const date  = v('ef-date');                 // datetime-local: "YYYY-MM-DDTHH:mm" or ""
+    const max   = parseInt(v('ef-max'), 10);
+    // The submit buttons use onclick (not native form submit), so HTML5 `required`
+    // never fires — validate here so an empty date can't be sent as ":00".
+    if (!title)            throw new Error('Укажите название мероприятия');
+    if (!date)            throw new Error('Укажите дату мероприятия');
+    if (!max || max < 1)  throw new Error('Укажите максимальное число участников (не меньше 1)');
     return {
-        title:           v('ef-title'),
+        title,
         description:     v('ef-desc') || undefined,
-        eventDate:       v('ef-date') + ':00',
-        maxParticipants: parseInt(v('ef-max')),
+        eventDate:       date + ':00',
+        maxParticipants: max,
         type:            v('ef-type'),
         status:          document.getElementById('ef-status')?.value,
     };
@@ -835,7 +853,32 @@ function closeModal() { document.getElementById('modal-overlay').classList.add('
 function closeModalOutside(e) { if (e.target === e.currentTarget) closeModal(); }
 function v(id)        { return (document.getElementById(id)?.value || '').trim(); }
 function esc(s)       { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function logout()     { setToken(null); go('/login'); }
+function logout()     { if (_notifTimer) { clearInterval(_notifTimer); _notifTimer = null; } setToken(null); go('/login'); }
+
+// ─── In-app notifications: detect approved/rejected applications ────────────────
+async function checkApplicationUpdates() {
+    if (!_token) return;
+    let apps;
+    try { apps = await api('/applications/my'); } catch { return; }
+
+    const current = {};
+    apps.forEach(a => { current[a.id] = a.status; });
+
+    let seen;
+    try { seen = JSON.parse(localStorage.getItem(SEEN_APPS_KEY)); } catch { seen = null; }
+
+    // First run after login: remember current state silently (no toasts for history).
+    if (!seen) { localStorage.setItem(SEEN_APPS_KEY, JSON.stringify(current)); return; }
+
+    apps.forEach(a => {
+        if (seen[a.id] !== a.status && (a.status === 'APPROVED' || a.status === 'REJECTED')) {
+            const ok = a.status === 'APPROVED';
+            toast(`${ok ? '✅' : '❌'} Заявку на «${a.eventTitle}» ${ok ? 'одобрили' : 'отклонили'}`,
+                  ok ? 'success' : 'info');
+        }
+    });
+    localStorage.setItem(SEEN_APPS_KEY, JSON.stringify(current));
+}
 
 function fmtDate(d) {
     return new Date(d).toLocaleString('ru-RU', { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
