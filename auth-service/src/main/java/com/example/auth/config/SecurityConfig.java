@@ -33,6 +33,9 @@ public class SecurityConfig {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
+                // 2FA management acts on the logged-in user — must be authenticated.
+                // Listed before the broad /api/auth/** permitAll (first match wins).
+                .requestMatchers("/api/auth/2fa/**").authenticated()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()

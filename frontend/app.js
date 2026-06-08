@@ -105,6 +105,12 @@ function renderNav() {
 
 // ─── Page: Login ──────────────────────────────────────────────────────────────
 function pageLogin() {
+    // Result of an email-verification redirect (?verified=1|0 before the #hash).
+    const verified = new URLSearchParams(location.search).get('verified');
+    if (verified === '1')      toast('Email подтверждён! Теперь войдите в систему.', 'success');
+    else if (verified === '0') toast('Ссылка подтверждения недействительна или истекла.', 'error');
+    if (verified !== null)     history.replaceState(null, '', location.pathname + location.hash);
+
     render(`
         <div class="max-w-md mx-auto mt-12 fade-in">
             <div class="bg-white rounded-2xl shadow-xl p-8">

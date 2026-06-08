@@ -45,14 +45,8 @@ public class NotificationConsumer {
         String body;
 
         switch (event.getType()) {
-            case "registered" -> {
-                String verifyLink = event.getPayload().getOrDefault("verifyLink", "");
-                subject = "Подтвердите email — Event Platform";
-                body = "Здравствуйте, " + name + "!\n\n"
-                        + "Для подтверждения email перейдите по ссылке:\n"
-                        + verifyLink + "\n\n"
-                        + "Ссылка действует 24 часа.\n\nС уважением,\nEvent Platform";
-            }
+            // NOTE: the verification email on "registered" is sent directly by
+            // auth-service (HTML). We intentionally don't email here to avoid duplicates.
             case "email_verified" -> {
                 subject = "Email подтверждён — Event Platform";
                 body = "Здравствуйте, " + name + "!\n\n"
