@@ -22,4 +22,4 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:bXktc3VwZXItc2VjcmV0LWtleS1mb3ItZXZlbnQtcGxhdGZvcm0tMjAyNQ==}
+    secret: ${JWT_SECRET}

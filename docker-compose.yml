@@ -71,12 +71,12 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
-      JWT_SECRET: ${JWT_SECRET:-bXktc3VwZXItc2VjcmV0LWtleS1mb3ItZXZlbnQtcGxhdGZvcm0tMjAyNQ==}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env (generate: openssl rand -base64 48)}
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      APP_ADMIN_SECURITY_CODE: ${ADMIN_SECURITY_CODE:-admin-secure-2025}
+      APP_ADMIN_SECURITY_CODE: ${ADMIN_SECURITY_CODE:?ADMIN_SECURITY_CODE must be set in .env}
       UPLOADS_DIR: /app/uploads/profile-images
       MAIL_SSL_ENABLE: ${MAIL_SSL_ENABLE:-false}
       MAIL_STARTTLS_ENABLE: ${MAIL_STARTTLS_ENABLE:-true}
@@ -104,7 +104,7 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
-      JWT_SECRET: ${JWT_SECRET:-bXktc3VwZXItc2VjcmV0LWtleS1mb3ItZXZlbnQtcGxhdGZvcm0tMjAyNQ==}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
     # No host port: reached via the gateway on the internal docker network.
     depends_on:
       event-db:

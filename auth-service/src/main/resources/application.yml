@@ -35,11 +35,11 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:bXktc3VwZXItc2VjcmV0LWtleS1mb3ItZXZlbnQtcGxhdGZvcm0tMjAyNQ==}
+    secret: ${JWT_SECRET}
     expiration: 86400000
   frontend-url: ${FRONTEND_URL:http://localhost:8000}
   admin:
-    security-code: ${APP_ADMIN_SECURITY_CODE:admin-secure-2025}
+    security-code: ${APP_ADMIN_SECURITY_CODE}
   seed:
     admin-email: ${SEED_ADMIN_EMAIL:admin@event.com}
     admin-password: ${SEED_ADMIN_PASSWORD:Admin1234}
