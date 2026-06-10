@@ -11,7 +11,7 @@ frontend (nginx, SPA)
               ├── event-service       :8081  (PostgreSQL eventdb)
               └── notification-service :8082
 
-RabbitMQ :5672 (management :15672)
+RabbitMQ :5672
 ```
 
 Все порты сервисов, БД и RabbitMQ **доступны только внутри docker-сети** —
@@ -34,7 +34,9 @@ RabbitMQ :5672 (management :15672)
 ```bash
 cp .env.example .env
 # Заполните секреты в .env: сильные DB_PASSWORD, RABBITMQ_*, JWT_SECRET,
-# ADMIN_SECURITY_CODE, а также SMTP_* для отправки писем.
+# ADMIN_SECURITY_CODE, SEED_ADMIN_PASSWORD, а также SMTP_* для отправки писем.
+# JWT_SECRET, ADMIN_SECURITY_CODE и SEED_ADMIN_PASSWORD обязательны —
+# без них `docker compose up` намеренно не стартует.
 
 # Собрать и запустить (jar-ы собираются внутри Docker, локальный Maven не нужен)
 docker compose up -d --build
@@ -91,7 +93,7 @@ multi-stage сборка пересоберёт нужные образы из �
 | Метод | URL | Описание | Доступ |
 |---|---|---|---|
 | GET | `/api/events` | Открытые мероприятия | Публичный |
-| GET | `/api/events/all` | Все мероприятия | AUTH |
+| GET | `/api/events/all` | Все мероприятия (вкл. CLOSED/CANCELLED) | MODERATOR/ADMIN |
 | GET | `/api/events/{id}` | Мероприятие по ID | Публичный |
 | POST | `/api/events` | Создать мероприятие | MODERATOR/ADMIN |
 | PUT | `/api/events/{id}` | Обновить мероприятие | MODERATOR/ADMIN |
@@ -165,9 +167,14 @@ Authorization: Bearer <admin-token>
 
 `CONFERENCE`, `MASTERCLASS`, `OLYMPIAD`, `CONTEST`, `MEETUP`, `CONSULTATION`, `OTHER`
 
-## Тестовые учётные данные
+## Учётные данные администратора
 
-После запуска зарегистрируйте пользователей через API. Для первого ADMIN — используйте SQL:
+При первом старте auth-service автоматически создаёт ADMIN из `.env`
+(`SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`). Без заданного `SEED_ADMIN_PASSWORD`
+админ **не создаётся** (и стек не стартует — переменная обязательна).
+
+Обычных пользователей регистрируйте через API. При необходимости роль можно
+сменить вручную в БД:
 ```sql
 -- authdb
 UPDATE users SET role = 'ADMIN' WHERE email = 'your@email.com';
