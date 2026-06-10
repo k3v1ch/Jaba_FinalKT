@@ -3,9 +3,12 @@ services:
   auth-db:
     image: postgres:16-alpine
     container_name: auth-db
-    mem_limit: 256m
+    mem_limit: 192m
     cpus: 0.5
     restart: unless-stopped
+    # Defaults assume a dedicated DB host (shared_buffers=128MB, max_connections=100).
+    # Each service's Hikari pool is 5, so 25 connections is already generous.
+    command: postgres -c shared_buffers=32MB -c max_connections=25
     environment:
       POSTGRES_DB: authdb
       POSTGRES_USER: ${DB_USER:-postgres}
@@ -22,9 +25,10 @@ services:
   event-db:
     image: postgres:16-alpine
     container_name: event-db
-    mem_limit: 256m
+    mem_limit: 192m
     cpus: 0.5
     restart: unless-stopped
+    command: postgres -c shared_buffers=32MB -c max_connections=25
     environment:
       POSTGRES_DB: eventdb
       POSTGRES_USER: ${DB_USER:-postgres}
@@ -40,9 +44,11 @@ services:
 
   # ─── Message broker ─────────────────────────────────────────
   rabbitmq:
-    image: rabbitmq:3.13-management-alpine
+    # Plain (non-management) image: the management UI is unreachable anyway (no host
+    # port) and its plugin costs ~100MB of RAM.
+    image: rabbitmq:3.13-alpine
     container_name: rabbitmq
-    mem_limit: 384m
+    mem_limit: 256m
     cpus: 0.75
     restart: unless-stopped
     environment:
@@ -59,7 +65,7 @@ services:
   auth-service:
     build: ./auth-service
     container_name: auth-service
-    mem_limit: 384m
+    mem_limit: 320m
     cpus: 1.0
     restart: unless-stopped
     environment:
@@ -71,12 +77,14 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env (generate: openssl rand -base64 48)}
+      JWT_SECRET: "${JWT_SECRET:?JWT_SECRET must be set in .env (generate with openssl rand -base64 48)}"
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       APP_ADMIN_SECURITY_CODE: ${ADMIN_SECURITY_CODE:?ADMIN_SECURITY_CODE must be set in .env}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@event.com}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:?SEED_ADMIN_PASSWORD must be set in .env (admin is not seeded without it)}
       UPLOADS_DIR: /app/uploads/profile-images
       MAIL_SSL_ENABLE: ${MAIL_SSL_ENABLE:-false}
       MAIL_STARTTLS_ENABLE: ${MAIL_STARTTLS_ENABLE:-true}
@@ -92,7 +100,7 @@ services:
   event-service:
     build: ./event-service
     container_name: event-service
-    mem_limit: 320m
+    mem_limit: 288m
     cpus: 1.0
     restart: unless-stopped
     environment:
@@ -115,7 +123,7 @@ services:
   notification-service:
     build: ./notification-service
     container_name: notification-service
-    mem_limit: 256m
+    mem_limit: 224m
     cpus: 0.5
     restart: unless-stopped
     environment:
@@ -137,12 +145,13 @@ services:
   api-gateway:
     build: ./api-gateway
     container_name: api-gateway
-    mem_limit: 256m
+    mem_limit: 224m
     cpus: 0.75
     restart: unless-stopped
     environment:
       AUTH_SERVICE_URL: http://auth-service:8080
       EVENT_SERVICE_URL: http://event-service:8081
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8000}
     # No host port: frontend nginx proxies /api to it on the internal network.
     depends_on:
       - auth-service

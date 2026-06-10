@@ -20,6 +20,7 @@ public class EventManagementService {
     private final EventRepository eventRepository;
     private final ApplicationRepository applicationRepository;
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
     public List<EventDto.EventResponse> getAllEvents() {
         return eventRepository.findAllByOrderByEventDateAsc()
                 .stream()
@@ -94,7 +95,6 @@ public class EventManagementService {
                 approvedCount,
                 event.getType(),
                 event.getStatus(),
-                event.getCreatedBy(),
                 event.getCreatedAt()
         );
     }

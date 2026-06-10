@@ -1,5 +1,8 @@
 server:
   port: 8080
+  tomcat:
+    threads:
+      max: 20   # default is 200 — far more threads (and stack memory) than this load needs
 
 spring:
   datasource:
@@ -42,7 +45,8 @@ app:
     security-code: ${APP_ADMIN_SECURITY_CODE}
   seed:
     admin-email: ${SEED_ADMIN_EMAIL:admin@event.com}
-    admin-password: ${SEED_ADMIN_PASSWORD:Admin1234}
+    # No default on purpose: without an explicit password the admin is not seeded.
+    admin-password: ${SEED_ADMIN_PASSWORD:}
     admin-name: ${SEED_ADMIN_NAME:Admin}
   uploads:
     profile-images-dir: ${UPLOADS_DIR:./uploads/profile-images}

@@ -24,7 +24,9 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins: "*"
+            # The SPA is served same-origin via nginx, so cross-origin callers are
+            # never legitimate — only the configured frontend origin is allowed.
+            allowedOrigins: ${FRONTEND_URL:http://localhost:8000}
             allowedMethods:
               - GET
               - POST

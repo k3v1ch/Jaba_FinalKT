@@ -20,7 +20,9 @@
 - Запущенный стек (`docker compose up -d` в корне проекта).
 - `authdb` доступна тесту (по умолчанию `localhost:5432`, порт опубликован в compose).
   Если БД недоступна — шаги, зависящие от верификации email, помечаются `SKIP`.
-- Сид-админ `admin@event.com / Admin1234` (создаётся `DataSeeder` при старте auth-service).
+- Сид-админ `admin@event.com` (создаётся `DataSeeder` при старте auth-service,
+  пароль задаётся через `SEED_ADMIN_PASSWORD` в `.env`; передайте его тестам
+  через `-Dadmin.password=...`).
 
 ## Запуск
 
@@ -55,8 +57,8 @@ docker run --rm --network host \
 | Свойство | По умолчанию | Назначение |
 |---|---|---|
 | `base.url` | `https://event.vernovpn.com` | базовый URL API (можно `http://localhost:8000` — напрямую в gateway) |
-| `admin.email` / `admin.password` | `admin@event.com` / `Admin1234` | учётка админа |
-| `admin.security.code` | `admin-secure-2025` | код безопасности для смены ролей |
+| `admin.email` / `admin.password` | `admin@event.com` / — | учётка админа (пароль = `SEED_ADMIN_PASSWORD` из `.env`) |
+| `admin.security.code` | — | код безопасности для смены ролей (= `ADMIN_SECURITY_CODE` из `.env`) |
 | `db.url` / `db.user` / `db.pass` | `jdbc:postgresql://localhost:5432/authdb` / `postgres` / `postgres` | доступ к authdb для верификации email |
 
 Пример прогона напрямую через gateway без TLS:

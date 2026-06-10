@@ -14,6 +14,7 @@ public enum ErrorCode {
     AUTH_2FA_INVALID        ("AUTH_009", HttpStatus.UNAUTHORIZED, "Неверный 2FA-код"),
     AUTH_2FA_NOT_SETUP      ("AUTH_010", HttpStatus.BAD_REQUEST,  "2FA не настроена"),
     AUTH_SECURITY_CODE_INVALID("AUTH_011", HttpStatus.FORBIDDEN,  "Неверный security-code"),
+    AUTH_2FA_ALREADY_ENABLED("AUTH_012", HttpStatus.CONFLICT,     "2FA уже включена"),
 
     PROFILE_IMAGE_LIMIT     ("PROFILE_001", HttpStatus.CONFLICT,         "Достигнут лимит изображений (макс. 5)"),
     PROFILE_IMAGE_NOT_FOUND ("PROFILE_002", HttpStatus.NOT_FOUND,        "Изображение не найдено"),

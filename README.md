@@ -157,7 +157,7 @@ PUT /api/admin/users/5/role
 Authorization: Bearer <admin-token>
 {
   "role": "MODERATOR",
-  "securityCode": "admin-secure-2025"
+  "securityCode": "<значение ADMIN_SECURITY_CODE из .env>"
 }
 ```
 

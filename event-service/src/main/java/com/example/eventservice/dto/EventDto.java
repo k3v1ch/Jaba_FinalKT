@@ -55,7 +55,6 @@ public class EventDto {
         private long approvedCount;
         private Event.EventType type;
         private Event.EventStatus status;
-        private String createdBy;
         private LocalDateTime createdAt;
     }
 }

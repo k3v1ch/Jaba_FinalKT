@@ -72,7 +72,8 @@ public class AuthController {
     }
 
     @PostMapping("/2fa/disable")
-    public AuthDto.MessageResponse disable2fa(@AuthenticationPrincipal UserDetails user) {
-        return authService.disableTwoFactor(user.getUsername());
+    public AuthDto.MessageResponse disable2fa(@AuthenticationPrincipal UserDetails user,
+                                              @Valid @RequestBody AuthDto.TwoFactorVerifyRequest req) {
+        return authService.disableTwoFactor(user.getUsername(), req);
     }
 }

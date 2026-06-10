@@ -21,7 +21,7 @@ public class DataSeeder implements ApplicationRunner {
     @Value("${app.seed.admin-email:admin@event.com}")
     private String adminEmail;
 
-    @Value("${app.seed.admin-password:Admin1234}")
+    @Value("${app.seed.admin-password:}")
     private String adminPassword;
 
     @Value("${app.seed.admin-name:Admin}")
@@ -29,6 +29,10 @@ public class DataSeeder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        if (adminPassword == null || adminPassword.isBlank()) {
+            log.warn("SEED_ADMIN_PASSWORD is not set — admin account will NOT be seeded");
+            return;
+        }
         if (userRepository.existsByEmail(adminEmail)) return;
 
         User admin = User.builder()
@@ -40,10 +44,6 @@ public class DataSeeder implements ApplicationRunner {
                 .build();
 
         userRepository.save(admin);
-        log.info("==============================================");
-        log.info("  DEV ADMIN CREATED");
-        log.info("  Email:    {}", adminEmail);
-        log.info("  Password: {}", adminPassword);
-        log.info("==============================================");
+        log.info("Seed admin created: {}", adminEmail);
     }
 }

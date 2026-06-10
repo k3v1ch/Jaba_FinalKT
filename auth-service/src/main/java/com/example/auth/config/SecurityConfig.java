@@ -33,6 +33,9 @@ public class SecurityConfig {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
+                // The ERROR dispatch (after sendError) re-enters the filter chain without
+                // the JWT auth; without this permit a role-mismatch 403 morphs into a 401.
+                .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ERROR).permitAll()
                 // 2FA management acts on the logged-in user — must be authenticated.
                 // Listed before the broad /api/auth/** permitAll (first match wins).
                 .requestMatchers("/api/auth/2fa/**").authenticated()

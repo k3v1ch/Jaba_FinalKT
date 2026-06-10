@@ -335,7 +335,7 @@ async function pageEvents() {
                 .btn-primary:hover{background:#4338ca}
             </style>
         `);
-    } catch (err) { render(`<div class="text-red-500 py-10 text-center">${err.message}</div>`); }
+    } catch (err) { render(`<div class="text-red-500 py-10 text-center">${esc(err.message)}</div>`); }
 }
 
 function eventCard(e, alreadyApplied) {
@@ -440,7 +440,7 @@ async function pageMyApps() {
             </div>
             <style>.pill{display:inline-flex;align-items:center;padding:.125rem .625rem;border-radius:9999px;font-size:.75rem;font-weight:500}</style>
         `);
-    } catch (err) { render(`<div class="text-red-500 py-10 text-center">${err.message}</div>`); }
+    } catch (err) { render(`<div class="text-red-500 py-10 text-center">${esc(err.message)}</div>`); }
 }
 
 async function cancelApp(id) {
@@ -508,7 +508,7 @@ async function pageProfile() {
                 toast('Профиль обновлён!', 'success');
             } catch (err) { toast(err.message, 'error'); }
         };
-    } catch (err) { render(`<div class="text-red-500 py-10 text-center">${err.message}</div>`); }
+    } catch (err) { render(`<div class="text-red-500 py-10 text-center">${esc(err.message)}</div>`); }
 }
 
 async function setup2FA() {
@@ -537,11 +537,23 @@ async function confirm2FA() {
     } catch (err) { toast(err.message, 'error'); }
 }
 
-async function disable2FA() {
-    if (!confirm('Отключить 2FA?')) return;
+function disable2FA() {
+    modal(`
+        <h2 class="text-xl font-bold mb-3">Отключение 2FA</h2>
+        <p class="text-sm text-gray-500 mb-2">Для подтверждения введите текущий код из Google Authenticator:</p>
+        <input id="totp-disable" type="text" placeholder="000000" maxlength="6" class="inp mb-4">
+        <div class="flex gap-3">
+            <button onclick="confirmDisable2FA()" class="flex-1 py-2 rounded-lg font-semibold text-white cursor-pointer border-none bg-red-600 hover:bg-red-700 transition">Отключить</button>
+            <button onclick="closeModal()" class="btn-secondary flex-1 py-2">Отмена</button>
+        </div>
+        <style>.inp{display:block;width:100%;border:1px solid #d1d5db;border-radius:.5rem;padding:.625rem 1rem;font-size:.875rem;outline:none}.inp:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.15)}.btn-secondary{background:#f3f4f6;color:#374151;border-radius:.5rem;font-weight:600;cursor:pointer;border:none}</style>
+    `);
+}
+
+async function confirmDisable2FA() {
     try {
-        await api('/auth/2fa/disable', { method: 'POST' });
-        toast('2FA отключена', 'info'); pageProfile();
+        await api('/auth/2fa/disable', { method: 'POST', body: JSON.stringify({ code: v('totp-disable') }) });
+        closeModal(); toast('2FA отключена', 'info'); pageProfile();
     } catch (err) { toast(err.message, 'error'); }
 }
 
@@ -596,7 +608,7 @@ async function pageAdminEvents() {
                 .pill{display:inline-flex;align-items:center;padding:.125rem .625rem;border-radius:9999px;font-size:.75rem;font-weight:500}
             </style>
         `);
-    } catch (err) { render(`<div class="text-red-500 py-10 text-center">${err.message}</div>`); }
+    } catch (err) { render(`<div class="text-red-500 py-10 text-center">${esc(err.message)}</div>`); }
 }
 
 function openCreateEvent() { modal(eventFormModal()); }
@@ -731,7 +743,7 @@ async function pageAdminApplications() {
                 }
             </div>
         `);
-    } catch (err) { render(`<div class="text-red-500 py-10 text-center">${err.message}</div>`); }
+    } catch (err) { render(`<div class="text-red-500 py-10 text-center">${esc(err.message)}</div>`); }
 }
 
 function reviewApp(id, status) {
@@ -813,7 +825,7 @@ async function pageAdminUsers() {
             </div>
             <style>.pill{display:inline-flex;align-items:center;padding:.125rem .625rem;border-radius:9999px;font-size:.75rem;font-weight:500}</style>
         `);
-    } catch (err) { render(`<div class="text-red-500 py-10 text-center">${err.message}</div>`); }
+    } catch (err) { render(`<div class="text-red-500 py-10 text-center">${esc(err.message)}</div>`); }
 }
 
 function openChangeRole(userId, current) {
@@ -832,7 +844,7 @@ function openChangeRole(userId, current) {
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                     Security Code <span class="text-gray-400 font-normal">(защитный код из конфига)</span>
                 </label>
-                <input id="sec-code" type="password" placeholder="admin-secure-2025" class="inp">
+                <input id="sec-code" type="password" placeholder="Введите security code" class="inp">
             </div>
         </div>
         <div class="flex gap-3">

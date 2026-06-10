@@ -49,8 +49,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception e) {
         log.error("[SRV_001] unhandled", e);
+        // Exception class/message can leak internals (SQL, file paths) — keep the response generic.
         return ResponseEntity.status(ErrorCode.SERVER_INTERNAL.getStatus())
-                .body(new ErrorResponse(ErrorCode.SERVER_INTERNAL,
-                        e.getClass().getSimpleName() + ": " + e.getMessage()));
+                .body(new ErrorResponse(ErrorCode.SERVER_INTERNAL));
     }
 }

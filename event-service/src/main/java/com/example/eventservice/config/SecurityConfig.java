@@ -27,6 +27,12 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // The ERROR dispatch (after sendError) re-enters the filter chain without
+                // the JWT auth; without this permit a role-mismatch 403 morphs into a 401.
+                .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ERROR).permitAll()
+                // /all includes CLOSED/CANCELLED events — staff only.
+                // Listed before the broad GET permitAll (first match wins).
+                .requestMatchers(HttpMethod.GET, "/api/events/all").hasAnyRole("ADMIN", "MODERATOR")
                 .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/**").permitAll()
                 .anyRequest().authenticated()
             )

@@ -74,6 +74,10 @@ public class AuthService {
         String email = request.getEmail().trim().toLowerCase();
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, request.getPassword()));
+        } catch (DisabledException e) {
+            // The provider's pre-auth check fires before our isEnabled() check below —
+            // without this catch an unverified login surfaces as a 500.
+            throw new AppException(ErrorCode.AUTH_EMAIL_NOT_VERIFIED);
         } catch (BadCredentialsException e) {
             throw new AppException(ErrorCode.AUTH_BAD_CREDENTIALS);
         }
@@ -103,6 +107,7 @@ public class AuthService {
                 .orElseThrow(() -> new AppException(ErrorCode.AUTH_REFRESH_INVALID));
         if (rt.isRevoked()) throw new AppException(ErrorCode.AUTH_REFRESH_REVOKED);
         if (rt.isExpired()) throw new AppException(ErrorCode.AUTH_REFRESH_INVALID, "expired");
+        if (!rt.getUser().isEnabled()) throw new AppException(ErrorCode.AUTH_EMAIL_NOT_VERIFIED);
         return new AuthDto.AuthResponse(jwtService.generateToken(rt.getUser()), rt.getToken());
     }
 
@@ -117,6 +122,9 @@ public class AuthService {
     public AuthDto.TwoFactorSetupResponse setupTwoFactor(String email) {
         User user = userRepository.findByEmail(email.trim().toLowerCase())
                 .orElseThrow(() -> new AppException(ErrorCode.AUTH_USER_NOT_FOUND, email));
+        // Re-running setup while 2FA is active would silently swap the secret,
+        // letting a stolen access token re-enroll 2FA. Require disable (with code) first.
+        if (user.isTwoFactorEnabled()) throw new AppException(ErrorCode.AUTH_2FA_ALREADY_ENABLED);
         String secret = twoFactorService.generateSecret();
         user.setTwoFactorSecret(secret);
         userRepository.save(user);
@@ -134,9 +142,15 @@ public class AuthService {
         return new AuthDto.MessageResponse("2FA включена.");
     }
 
-    public AuthDto.MessageResponse disableTwoFactor(String email) {
+    public AuthDto.MessageResponse disableTwoFactor(String email, AuthDto.TwoFactorVerifyRequest req) {
         User user = userRepository.findByEmail(email.trim().toLowerCase())
                 .orElseThrow(() -> new AppException(ErrorCode.AUTH_USER_NOT_FOUND, email));
+        // A bare access token must not be enough to strip 2FA — demand a current TOTP code.
+        if (user.isTwoFactorEnabled()) {
+            if (user.getTwoFactorSecret() == null
+                    || !twoFactorService.validateCode(user.getTwoFactorSecret(), req.getCode()))
+                throw new AppException(ErrorCode.AUTH_2FA_INVALID);
+        }
         user.setTwoFactorEnabled(false);
         user.setTwoFactorSecret(null);
         userRepository.save(user);

@@ -16,5 +16,5 @@ EXPOSE 8082
 # Capped heap so the JVM doesn't reserve ~25% of host RAM by default.
 # SerialGC = no background GC threads (lower idle CPU + footprint on a small box).
 # TieredStopAtLevel=1 trims JIT compiler work at startup so the CPU doesn't spike.
-ENV JAVA_OPTS="-Xmx128m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xss512k -XX:+ExitOnOutOfMemoryError"
+ENV JAVA_OPTS="-Xmx96m -XX:MaxMetaspaceSize=112m -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xss512k -XX:+ExitOnOutOfMemoryError"
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]

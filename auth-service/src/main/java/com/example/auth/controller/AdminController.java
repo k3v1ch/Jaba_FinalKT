@@ -22,7 +22,7 @@ public class AdminController {
 
     private final UserRepository userRepository;
 
-    @Value("${app.admin.security-code:admin-secure-2025}")
+    @Value("${app.admin.security-code}")
     private String adminSecurityCode;
 
     @GetMapping("/users")
